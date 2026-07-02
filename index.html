@@ -66,6 +66,9 @@
   .logo span{color:var(--ouro)}
   .nav{display:flex;gap:22px;font-size:.95rem;font-weight:600}
   .nav a:hover{color:var(--rosa)}
+  .nav a.nav-entrar{border:1px solid var(--rosa);color:var(--rosa-escuro);
+                    padding:5px 14px;border-radius:999px;font-weight:700}
+  .nav a.nav-entrar:hover{background:var(--rosa);color:#fff}
   @media(max-width:720px){.nav{display:none}}
 
   /* Hero */
@@ -153,7 +156,7 @@
       <a href="#marcas">Marcas</a>
       <a href="#feedback">Feedbacks</a>
       <a href="#como">Como funciona</a>
-      <a href="/estoque">Estoque</a>
+      <a href="/estoque" class="nav-entrar">Entrar</a>
     </nav>
     <a class="btn btn-wpp btn-sm js-wpp">WhatsApp</a>
   </div>
