@@ -1,6 +1,7 @@
 # Dados e uploads (sensíveis / gerados em runtime)
 estoque/estoque.db
 estoque/uploads/
+estoque/catalogos/
 estoque/catalog_precos.json
 
 # Python

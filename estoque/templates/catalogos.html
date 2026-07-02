@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catálogos · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;--verde:#2e9e5b;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao);padding-bottom:60px}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px;
+         display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.4rem}
+  header a.voltar{color:#fff;background:rgba(255,255,255,.18);padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:700;font-size:.85rem}
+  header a.voltar:hover{background:rgba(255,255,255,.3)}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  .flash{padding:12px 16px;border-radius:10px;margin:10px 0;font-weight:600}
+  .flash.ok{background:#e6f6ec;color:var(--verde)}.flash.erro{background:#fbe6e4;color:var(--erro)}
+  .intro{color:#6b565a;font-size:.92rem;margin:6px 0 16px;max-width:70ch}
+  .card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 6px 20px rgba(90,40,55,.08);margin-bottom:14px}
+  .card h3{font-size:1.05rem;color:var(--rosa-escuro);margin-bottom:4px}
+  .status{font-size:.85rem;margin-bottom:12px}
+  .status .ok{color:var(--verde);font-weight:700}
+  .status .no{color:#9a868b}
+  .status a{color:var(--rosa-escuro)}
+  form.up{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:3px}
+  .fld label{font-size:.75rem;color:#7a6266}
+  input{padding:8px 10px;border:1px solid #e6d3d9;border-radius:8px;font-size:.88rem}
+  input[type=url]{min-width:240px}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:9px 16px;border-radius:999px;font-weight:700;cursor:pointer;font-size:.85rem}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn-danger{background:transparent;color:var(--erro);border:1px solid #e6b0aa}
+  .ou{color:#9a868b;font-size:.8rem;padding:0 4px 8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Catálogos · Botis da Eve</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="voltar" href="/estoque">Estoque</a>
+    <a class="voltar" href="/clientes">Clientes</a>
+    <a class="voltar" href="/vendas">Vendas</a>
+    <a class="voltar" href="/catalogos">Catálogos</a>
+    <a class="voltar" href="/">← Site</a>
+    <a class="voltar" href="/logout">Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  {% for cat,msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{cat}}">{{msg}}</div>
+  {% endfor %}
+
+  <p class="intro">Suba o <b>PDF</b> do catálogo de cada marca <b>ou</b> informe um <b>link</b>
+    (ex.: Google Drive, site da marca). No site, o botão <b>"Ver catálogo"</b> de cada marca
+    passa a abrir o que você configurar aqui. Dica: catálogos muito pesados (acima de ~15 MB),
+    prefira o link, para não encher o espaço do servidor.</p>
+
+  {% for m in marcas %}
+  <div class="card">
+    <h3>{{m.nome}}</h3>
+    <div class="status">
+      {% if m.arquivo %}
+        <span class="ok">✓ PDF enviado</span> · <a href="/catalogo/{{m.slug}}" target="_blank">ver</a>
+        <span class="no">· atualizado {{m.atualizado}}</span>
+      {% elif m.url %}
+        <span class="ok">✓ Link configurado</span> ·
+        <a href="/catalogo/{{m.slug}}" target="_blank">abrir</a>
+        <span class="no">· atualizado {{m.atualizado}}</span>
+      {% else %}
+        <span class="no">Nenhum catálogo ainda — o botão mostra "em breve".</span>
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <form class="up" action="/catalogos/{{m.slug}}" method="post" enctype="multipart/form-data">
+        <div class="fld">
+          <label>Enviar PDF</label>
+          <input type="file" name="arquivo" accept="application/pdf" />
+        </div>
+        <span class="ou">ou</span>
+        <div class="fld">
+          <label>Link do catálogo</label>
+          <input type="url" name="url" placeholder="https://..." value="{{m.url or ''}}" />
+        </div>
+        <button class="btn" type="submit">Salvar</button>
+      </form>
+      {% if m.arquivo or m.url %}
+      <form action="/catalogos/{{m.slug}}/remover" method="post"
+            onsubmit="return confirm('Remover o catálogo de {{m.nome}}?')">
+        <button class="btn btn-danger" type="submit">Remover</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</body>
+</html>

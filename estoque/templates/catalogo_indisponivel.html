@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{nome}} · Catálogo · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;--wpp:#25d366;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(160deg,var(--blush),var(--creme));
+       min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--carvao);padding:20px;text-align:center}
+  .card{background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;box-shadow:0 12px 40px rgba(90,40,55,.15)}
+  .logo{font-weight:800;font-size:1.3rem;color:var(--rosa-escuro);margin-bottom:14px}
+  .logo span{color:#c9a15a}
+  h1{font-size:1.25rem;margin-bottom:10px}
+  p{color:#6b565a;margin-bottom:22px}
+  .btn{display:inline-block;background:var(--wpp);color:#fff;text-decoration:none;font-weight:700;
+       padding:13px 24px;border-radius:999px}
+  .btn:hover{filter:brightness(.95)}
+  .voltar{display:block;margin-top:16px;color:var(--rosa-escuro);text-decoration:none;font-size:.9rem}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Botis da <span>Eve</span></div>
+    <h1>Catálogo {{nome}} em breve 💛</h1>
+    <p>Ainda não publiquei o catálogo desta marca por aqui. Me chama no WhatsApp que eu te mostro tudo!</p>
+    <a class="btn" href="https://wa.me/5532999642777?text=Oi%20Eve!%20Quero%20ver%20o%20cat%C3%A1logo%20da%20{{nome}}"
+       target="_blank" rel="noopener">💬 Falar no WhatsApp</a>
+    <a class="voltar" href="https://botisdaeve.netlify.app/">← Voltar ao site</a>
+  </div>
+</body>
+</html>

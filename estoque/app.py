@@ -7,7 +7,8 @@ from functools import wraps
 from datetime import datetime
 
 from flask import (Flask, request, redirect, url_for, render_template,
-                   flash, get_flashed_messages, send_from_directory, session)
+                   flash, get_flashed_messages, send_from_directory, send_file,
+                   session, abort)
 from werkzeug.utils import secure_filename
 
 import nf_parser
@@ -16,6 +17,17 @@ import catalog_parser
 # Credenciais da area logada (troque aqui quando quiser)
 ADMIN_USER = os.environ.get('ESTOQUE_USER', 'admin')
 ADMIN_PASS = os.environ.get('ESTOQUE_PASS', 'admin')
+
+# Marcas (slug -> nome exibido) para a area de catalogos
+MARCAS = [
+    ('boticario', 'O Boticário'),
+    ('berenice', 'Quem Disse, Berenice?'),
+    ('eudora', 'Eudora'),
+    ('oui', 'OUI'),
+    ('natura', 'Natura'),
+    ('avon', 'Avon'),
+]
+MARCAS_DICT = dict(MARCAS)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(BASE)          # landing page (C:\botisdaeve)
@@ -27,6 +39,8 @@ DB = os.path.join(DATA_DIR, 'estoque.db')
 CATALOG_JSON = os.path.join(DATA_DIR, 'catalog_precos.json')
 UPLOAD = os.path.join(DATA_DIR, 'uploads')
 os.makedirs(UPLOAD, exist_ok=True)
+CATALOGOS_DIR = os.path.join(DATA_DIR, 'catalogos')   # PDFs publicos por marca
+os.makedirs(CATALOGOS_DIR, exist_ok=True)
 
 app = Flask(__name__)
 # Chave de sessao: em producao defina SECRET_KEY (string aleatoria longa).
@@ -93,7 +107,17 @@ def init_db():
         qtd INTEGER,
         preco_unit REAL
     );
+    CREATE TABLE IF NOT EXISTS catalogos(
+        marca TEXT PRIMARY KEY,     -- slug da marca
+        arquivo TEXT,               -- nome do PDF salvo (se upload)
+        url TEXT,                   -- link externo (se preferir)
+        atualizado TEXT
+    );
     """)
+    # Natura ja aponta para a loja oficial por padrao
+    con.execute("INSERT OR IGNORE INTO catalogos(marca,url,atualizado) VALUES(?,?,?)",
+                ('natura', 'https://www.minhaloja.natura.com/consultoria/evelinedavid',
+                 datetime.now().strftime('%d/%m/%Y')))
     # migracao: adiciona colunas em bancos antigos
     for ddl in ["tipo TEXT DEFAULT 'venda'", 'ultima_nf TEXT',
                 'data_compra TEXT', 'codigo_barras TEXT']:
@@ -569,6 +593,86 @@ def vendas_finalizar():
     con.commit()
     con.close()
     return {'ok': True, 'venda_id': vid, 'total': total}
+
+
+# ---------------- Catalogos por marca ----------------
+@app.route('/catalogos')
+@login_required
+def catalogos_admin():
+    con = db()
+    rows = {r['marca']: r for r in con.execute('SELECT * FROM catalogos').fetchall()}
+    con.close()
+    lista = []
+    for slug, nome in MARCAS:
+        r = rows.get(slug)
+        lista.append({'slug': slug, 'nome': nome,
+                      'arquivo': r['arquivo'] if r else None,
+                      'url': r['url'] if r else None,
+                      'atualizado': r['atualizado'] if r else None})
+    return render_template('catalogos.html', marcas=lista)
+
+
+@app.route('/catalogos/<marca>', methods=['POST'])
+@login_required
+def catalogos_salvar(marca):
+    if marca not in MARCAS_DICT:
+        abort(404)
+    f = request.files.get('arquivo')
+    url = (request.form.get('url') or '').strip()
+    hoje = datetime.now().strftime('%d/%m/%Y')
+    con = db()
+    if f and f.filename:
+        nome = marca + '.pdf'
+        f.save(os.path.join(CATALOGOS_DIR, nome))
+        con.execute('INSERT INTO catalogos(marca,arquivo,url,atualizado) VALUES(?,?,?,?) '
+                    'ON CONFLICT(marca) DO UPDATE SET arquivo=?, url=?, atualizado=?',
+                    (marca, nome, '', hoje, nome, '', hoje))
+        flash('Catálogo de %s enviado (PDF).' % MARCAS_DICT[marca], 'ok')
+    elif url:
+        con.execute('INSERT INTO catalogos(marca,arquivo,url,atualizado) VALUES(?,?,?,?) '
+                    'ON CONFLICT(marca) DO UPDATE SET arquivo=?, url=?, atualizado=?',
+                    (marca, '', url, hoje, '', url, hoje))
+        flash('Catálogo de %s salvo (link).' % MARCAS_DICT[marca], 'ok')
+    else:
+        flash('Envie um PDF ou informe um link.', 'erro')
+    con.commit()
+    con.close()
+    return redirect(url_for('catalogos_admin'))
+
+
+@app.route('/catalogos/<marca>/remover', methods=['POST'])
+@login_required
+def catalogos_remover(marca):
+    con = db()
+    row = con.execute('SELECT arquivo FROM catalogos WHERE marca=?', (marca,)).fetchone()
+    if row and row['arquivo']:
+        try:
+            os.remove(os.path.join(CATALOGOS_DIR, row['arquivo']))
+        except OSError:
+            pass
+    con.execute('DELETE FROM catalogos WHERE marca=?', (marca,))
+    con.commit()
+    con.close()
+    flash('Catálogo removido.', 'ok')
+    return redirect(url_for('catalogos_admin'))
+
+
+@app.route('/catalogo/<marca>')
+def catalogo_publico(marca):
+    """Rota PUBLICA: mostra o catalogo da marca (o site liga aqui)."""
+    if marca not in MARCAS_DICT:
+        abort(404)
+    con = db()
+    row = con.execute('SELECT * FROM catalogos WHERE marca=?', (marca,)).fetchone()
+    con.close()
+    if row and row['url']:
+        return redirect(row['url'])
+    if row and row['arquivo']:
+        caminho = os.path.join(CATALOGOS_DIR, row['arquivo'])
+        if os.path.exists(caminho):
+            return send_file(caminho, mimetype='application/pdf')
+    # sem catalogo ainda -> pagina amigavel
+    return render_template('catalogo_indisponivel.html', nome=MARCAS_DICT[marca])
 
 
 @app.route('/catalogo', methods=['POST'])
