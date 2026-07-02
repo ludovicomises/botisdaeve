@@ -19,13 +19,19 @@ ADMIN_PASS = os.environ.get('ESTOQUE_PASS', 'admin')
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(BASE)          # landing page (C:\botisdaeve)
-DB = os.path.join(BASE, 'estoque.db')
-CATALOG_JSON = os.path.join(BASE, 'catalog_precos.json')
-UPLOAD = os.path.join(BASE, 'uploads')
+# DATA_DIR: onde ficam banco/uploads. Em produção aponte para um disco PERSISTENTE
+# (variavel de ambiente ESTOQUE_DATA). Localmente, usa a propria pasta.
+DATA_DIR = os.environ.get('ESTOQUE_DATA', BASE)
+os.makedirs(DATA_DIR, exist_ok=True)
+DB = os.path.join(DATA_DIR, 'estoque.db')
+CATALOG_JSON = os.path.join(DATA_DIR, 'catalog_precos.json')
+UPLOAD = os.path.join(DATA_DIR, 'uploads')
 os.makedirs(UPLOAD, exist_ok=True)
 
 app = Flask(__name__)
-app.secret_key = 'botis-estoque-local'
+# Chave de sessao: em producao defina SECRET_KEY (string aleatoria longa).
+app.secret_key = os.environ.get('SECRET_KEY', 'botis-estoque-local-dev')
+app.config['MAX_CONTENT_LENGTH'] = 120 * 1024 * 1024   # uploads ate 120MB (catalogos)
 
 
 # ---------------- Banco ----------------
@@ -585,8 +591,13 @@ def catalogo():
     return redirect(url_for('home'))
 
 
+# inicializa o banco ao importar (funciona tambem sob gunicorn/WSGI em producao)
+init_db()
+
 if __name__ == '__main__':
-    init_db()
-    import webbrowser
-    webbrowser.open('http://127.0.0.1:5000')
-    app.run(debug=False, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    # abre o navegador so no uso local (nao em servidor)
+    if os.environ.get('ESTOQUE_DATA') is None:
+        import webbrowser
+        webbrowser.open('http://127.0.0.1:%d' % port)
+    app.run(debug=False, host='0.0.0.0', port=port)
