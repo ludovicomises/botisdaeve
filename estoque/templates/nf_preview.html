@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Conferir NF · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;
+        --carvao:#3a2e30;--verde:#2e9e5b;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao);padding-bottom:60px}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px}
+  header h1{font-size:1.4rem}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px}
+  .info{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 6px 20px rgba(90,40,55,.08);
+        display:flex;gap:28px;flex-wrap:wrap;margin-bottom:16px}
+  .info div .l{font-size:.72rem;color:#7a6266;text-transform:uppercase}
+  .info div .v{font-weight:800;color:var(--rosa-escuro)}
+  .aviso{background:#fff6e6;border:1px solid #f0d9a8;color:#8a6d1f;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:.9rem}
+  .aviso.dup{background:#fbe6e4;border-color:#e6b0aa;color:var(--erro)}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;
+        box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  th,td{padding:9px 11px;text-align:left;font-size:.85rem;border-bottom:1px solid #f2e7ea}
+  th{background:var(--blush);color:var(--rosa-escuro);text-transform:uppercase;font-size:.7rem}
+  td.num,th.num{text-align:right}
+  input[type=text]{width:90px;padding:6px 8px;border:1px solid #e6d3d9;border-radius:8px;text-align:right}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:11px 22px;border-radius:999px;font-weight:700;cursor:pointer}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn-ghost{background:transparent;color:var(--rosa-escuro);border:1px solid var(--rosa);padding:11px 20px;
+             border-radius:999px;font-weight:700;text-decoration:none;display:inline-block}
+  .actions{display:flex;gap:12px;align-items:center;margin-top:16px}
+  .mini{font-size:.78rem;color:#9a868b}
+  h3{margin:22px 0 6px;color:var(--carvao)}
+  .sug{color:var(--verde);font-size:.72rem}
+</style>
+</head>
+<body>
+<header><h1>Conferir e importar nota fiscal</h1></header>
+<div class="wrap">
+
+  <div class="info">
+    <div><div class="l">Nota</div><div class="v">{{nf['numero'] or '—'}}</div></div>
+    <div><div class="l">Data</div><div class="v">{{nf['data'] or '—'}}</div></div>
+    <div><div class="l">Total da nota</div><div class="v">R$ {{ (nf['total'] or 0)|brl }}</div></div>
+    <div><div class="l">Fornecedor</div><div class="v">{{nf['fornecedor']}}</div></div>
+  </div>
+
+  {% if ja_importada %}
+    <div class="aviso dup">⚠️ Esta nota (nº {{nf['numero']}}) já foi importada antes. Se confirmar de novo, as quantidades serão somadas novamente.</div>
+  {% endif %}
+
+  <form action="/confirmar" method="post">
+    <input type="hidden" name="nf_numero" value="{{nf['numero']}}" />
+    <input type="hidden" name="nf_data" value="{{nf['data']}}" />
+    <input type="hidden" name="nf_total" value="{{ '%.2f'|format(nf['total'] or 0) }}" />
+    <input type="hidden" name="count" value="{{ (revenda|length) + (material|length) }}" />
+
+    <h3>Produtos para revenda <span class="mini">(marque os que entram no estoque de venda; confira o preço)</span></h3>
+    <table>
+      <tr>
+        <th style="width:36px">✓</th><th>Código</th><th>Descrição</th>
+        <th class="num">Qtd</th><th class="num">Custo un.</th><th class="num">Preço venda</th>
+      </tr>
+      {% for i in revenda %}
+      {% set k = loop.index0 %}
+      <tr>
+        <td><input type="checkbox" name="incluir_{{k}}" checked /></td>
+        <td class="mini">{{i['cod']}}</td>
+        <td>{{i['desc']}}
+          <input type="hidden" name="cod_{{k}}" value="{{i['cod']}}" />
+          <input type="hidden" name="desc_{{k}}" value="{{i['desc']}}" />
+          <input type="hidden" name="qtd_{{k}}" value="{{i['qtd']|int}}" />
+          <input type="hidden" name="custo_{{k}}" value="{{ '%.2f'|format(i['vunit']) }}" />
+          <input type="hidden" name="tipo_{{k}}" value="venda" />
+        </td>
+        <td class="num">{{i['qtd']|int}}</td>
+        <td class="num">R$ {{ i['vunit']|brl }}</td>
+        <td class="num">
+          <input type="text" name="preco_{{k}}"
+                 value="{{ '%.2f'|format(i['sugestao'])|replace('.',',') if i['sugestao'] else '' }}"
+                 placeholder="0,00" />
+          {% if i['sugestao'] %}<div class="sug">sugestão catálogo</div>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    {% if material %}
+    <h3>🎁 Brindes / catálogos / amostras <span class="mini">(vão para o <b>estoque de brindes</b>, sem preço de venda)</span></h3>
+    <table>
+      <tr>
+        <th style="width:36px">✓</th><th>Código</th><th>Descrição</th>
+        <th class="num">Qtd</th><th class="num">Custo un.</th>
+      </tr>
+      {% for i in material %}
+      {% set k = (revenda|length) + loop.index0 %}
+      <tr>
+        <td><input type="checkbox" name="incluir_{{k}}" checked /></td>
+        <td class="mini">{{i['cod']}}</td>
+        <td>{{i['desc']}}
+          <input type="hidden" name="cod_{{k}}" value="{{i['cod']}}" />
+          <input type="hidden" name="desc_{{k}}" value="{{i['desc']}}" />
+          <input type="hidden" name="qtd_{{k}}" value="{{i['qtd']|int}}" />
+          <input type="hidden" name="custo_{{k}}" value="{{ '%.2f'|format(i['vunit']) }}" />
+          <input type="hidden" name="tipo_{{k}}" value="brinde" />
+        </td>
+        <td class="num">{{i['qtd']|int}}</td>
+        <td class="num">R$ {{ i['vunit']|brl }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="actions">
+      <button class="btn" type="submit">✓ Importar para o estoque</button>
+      <a class="btn-ghost" href="/estoque">Cancelar</a>
+    </div>
+  </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Dados e uploads (sensíveis / gerados em runtime)
+estoque/estoque.db
+estoque/uploads/
+estoque/catalog_precos.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Config local do editor/CLI
+.claude/
+
+# SO
+Thumbs.db
+Desktop.ini
+.DS_Store

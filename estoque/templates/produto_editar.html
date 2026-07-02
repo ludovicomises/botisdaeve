@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editar produto · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao)}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px}
+  header h1{font-size:1.3rem}
+  .wrap{max-width:640px;margin:24px auto;padding:0 20px}
+  .box{background:#fff;border-radius:16px;padding:26px;box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  label{display:block;font-size:.82rem;color:#7a6266;margin:14px 0 4px}
+  input,select{width:100%;padding:10px 12px;border:1px solid #e6d3d9;border-radius:10px;font-size:.95rem}
+  .row{display:flex;gap:12px}.row>div{flex:1}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:12px 24px;border-radius:999px;font-weight:700;cursor:pointer;margin-top:20px}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn-ghost{background:transparent;color:var(--rosa-escuro);border:1px solid var(--rosa);text-decoration:none;
+             display:inline-block;padding:11px 22px;border-radius:999px;font-weight:700;margin-top:20px}
+  .dica{font-size:.75rem;color:#9a868b;margin-top:3px}
+</style>
+</head>
+<body>
+<header><h1>Editar produto</h1></header>
+<div class="wrap">
+  <form class="box" method="post" action="/produto/{{p['id']}}/editar">
+    <label>Descrição</label>
+    <input name="descricao" value="{{p['descricao']}}" required />
+    <div class="row">
+      <div>
+        <label>Código interno</label>
+        <input name="codigo" value="{{p['codigo']}}" />
+      </div>
+      <div>
+        <label>Código de barras</label>
+        <input name="codigo_barras" value="{{p['codigo_barras'] or ''}}" placeholder="escaneie aqui" />
+        <div class="dica">clique no campo e passe o leitor no produto</div>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Marca</label>
+        <input name="marca" value="{{p['marca']}}" />
+      </div>
+      <div>
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="venda" {{'selected' if p['tipo']!='brinde' else ''}}>Produto de venda</option>
+          <option value="brinde" {{'selected' if p['tipo']=='brinde' else ''}}>Brinde</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Custo R$</label><input name="custo" value="{{ '%.2f'|format(p['custo'])|replace('.',',') }}" /></div>
+      <div><label>Preço venda R$</label><input name="preco_venda" value="{{ '%.2f'|format(p['preco_venda'])|replace('.',',') }}" /></div>
+      <div><label>Quantidade</label><input name="qtd" type="number" value="{{p['qtd']}}" min="0" />
+        <div class="dica">alterar aqui gera um ajuste no histórico</div></div>
+    </div>
+    <button class="btn" type="submit">Salvar</button>
+    <a class="btn-ghost" href="/estoque">Cancelar</a>
+  </form>
+</div>
+</body>
+</html>

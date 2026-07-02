@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Entrar · Estoque Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(160deg,var(--blush),var(--creme));
+       min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--carvao);padding:20px}
+  .card{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;
+        box-shadow:0 12px 40px rgba(90,40,55,.15);text-align:center}
+  .logo{font-weight:800;font-size:1.4rem;color:var(--rosa-escuro)}
+  .logo span{color:#c9a15a}
+  .sub{color:#7a6266;font-size:.85rem;margin:4px 0 22px}
+  label{display:block;text-align:left;font-size:.8rem;color:#7a6266;margin:12px 0 4px}
+  input{width:100%;padding:11px 12px;border:1px solid #e6d3d9;border-radius:10px;font-size:.95rem}
+  .btn{width:100%;background:var(--rosa);color:#fff;border:0;padding:12px;border-radius:999px;
+       font-weight:700;cursor:pointer;font-size:1rem;margin-top:20px}
+  .btn:hover{background:var(--rosa-escuro)}
+  .flash{background:#fbe6e4;color:var(--erro);padding:10px;border-radius:10px;margin-bottom:12px;font-size:.88rem;font-weight:600}
+  .voltar{display:inline-block;margin-top:16px;color:var(--rosa-escuro);font-size:.85rem;text-decoration:none}
+</style>
+</head>
+<body>
+  <form class="card" method="post" action="/login">
+    <div class="logo">Botis da <span>Eve</span></div>
+    <div class="sub">Área do Estoque · acesso restrito</div>
+    {% for cat,msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash">{{msg}}</div>
+    {% endfor %}
+    <input type="hidden" name="next" value="{{next}}" />
+    <label>Usuário</label>
+    <input name="usuario" autofocus required />
+    <label>Senha</label>
+    <input name="senha" type="password" required />
+    <button class="btn" type="submit">Entrar</button>
+    <a class="voltar" href="/">← Voltar ao site</a>
+  </form>
+</body>
+</html>

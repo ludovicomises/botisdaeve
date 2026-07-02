@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clientes · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;--verde:#2e9e5b;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao);padding-bottom:60px}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px;
+         display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.4rem}
+  header a.voltar{color:#fff;background:rgba(255,255,255,.18);padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:700;font-size:.85rem}
+  header a.voltar:hover{background:rgba(255,255,255,.3)}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px}
+  .flash{padding:12px 16px;border-radius:10px;margin:10px 0;font-weight:600}
+  .flash.ok{background:#e6f6ec;color:var(--verde)}.flash.erro{background:#fbe6e4;color:var(--erro)}
+  .box{background:#fff;border-radius:14px;padding:20px;box-shadow:0 6px 20px rgba(90,40,55,.08);margin-bottom:18px}
+  .box h3{font-size:1rem;margin-bottom:12px;color:var(--rosa-escuro)}
+  label{display:block;font-size:.8rem;color:#7a6266;margin:8px 0 2px}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid #e6d3d9;border-radius:9px;font-size:.9rem;font-family:inherit}
+  .row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1;min-width:150px}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;margin-top:12px}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn-sm{padding:6px 12px;font-size:.8rem;margin-top:0}
+  .btn-ghost{background:transparent;color:var(--rosa-escuro);border:1px solid var(--rosa)}
+  .btn-danger{background:transparent;color:var(--erro);border:1px solid #e6b0aa}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  th,td{padding:10px 12px;text-align:left;font-size:.86rem;border-bottom:1px solid #f2e7ea;vertical-align:top}
+  th{background:var(--blush);color:var(--rosa-escuro);text-transform:uppercase;font-size:.72rem}
+  .mini{font-size:.78rem;color:#9a868b}
+  details summary{cursor:pointer;color:var(--rosa-escuro);font-weight:600;font-size:.8rem}
+  .edit-form{margin-top:10px;padding:12px;background:var(--blush);border-radius:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Clientes · Botis da Eve</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="voltar" href="/estoque">Estoque</a>
+    <a class="voltar" href="/clientes">Clientes</a>
+    <a class="voltar" href="/vendas">Vendas</a>
+    <a class="voltar" href="/">← Site</a>
+    <a class="voltar" href="/logout">Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  {% for cat,msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{cat}}">{{msg}}</div>
+  {% endfor %}
+
+  <div class="box">
+    <h3>➕ Novo cliente</h3>
+    <form action="/cliente/novo" method="post">
+      <div class="row">
+        <div><label>Nome *</label><input name="nome" required /></div>
+        <div><label>Telefone</label><input name="telefone" placeholder="(32) 9....." /></div>
+        <div><label>Sexo</label>
+          <select name="sexo">
+            <option value="">—</option>
+            <option>Feminino</option><option>Masculino</option><option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <label>Endereço</label>
+      <input name="endereco" />
+      <label>Observação</label>
+      <textarea name="obs" rows="2"></textarea>
+      <button class="btn" type="submit">Cadastrar cliente</button>
+    </form>
+  </div>
+
+  <h3 style="margin:6px 0 8px;color:var(--carvao)">Clientes cadastrados ({{clientes|length}})</h3>
+  {% if clientes %}
+  <table>
+    <tr><th>Nome</th><th>Telefone</th><th>Sexo</th><th>Endereço</th><th>Obs.</th><th></th></tr>
+    {% for c in clientes %}
+    <tr>
+      <td><b>{{c['nome']}}</b></td>
+      <td>{{c['telefone']}}</td>
+      <td>{{c['sexo']}}</td>
+      <td class="mini">{{c['endereco']}}</td>
+      <td class="mini">{{c['obs']}}</td>
+      <td>
+        <details>
+          <summary>editar</summary>
+          <form class="edit-form" action="/cliente/{{c['id']}}/editar" method="post">
+            <label>Nome</label><input name="nome" value="{{c['nome']}}" required />
+            <div class="row">
+              <div><label>Telefone</label><input name="telefone" value="{{c['telefone']}}" /></div>
+              <div><label>Sexo</label>
+                <select name="sexo">
+                  <option value="" {{'selected' if not c['sexo'] else ''}}>—</option>
+                  <option {{'selected' if c['sexo']=='Feminino' else ''}}>Feminino</option>
+                  <option {{'selected' if c['sexo']=='Masculino' else ''}}>Masculino</option>
+                  <option {{'selected' if c['sexo']=='Outro' else ''}}>Outro</option>
+                </select>
+              </div>
+            </div>
+            <label>Endereço</label><input name="endereco" value="{{c['endereco']}}" />
+            <label>Observação</label><textarea name="obs" rows="2">{{c['obs']}}</textarea>
+            <div class="inline" style="display:flex;gap:8px">
+              <button class="btn btn-sm" type="submit">Salvar</button>
+            </div>
+          </form>
+          <form action="/cliente/{{c['id']}}/remover" method="post"
+                onsubmit="return confirm('Remover {{c['nome']}}?')" style="margin-top:6px">
+            <button class="btn btn-sm btn-danger" type="submit">Remover cliente</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <div class="box"><p class="mini">Nenhum cliente cadastrado ainda.</p></div>
+  {% endif %}
+</div>
+</body>
+</html>

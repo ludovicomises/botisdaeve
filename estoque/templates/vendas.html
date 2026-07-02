@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendas · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;--carvao:#3a2e30;--verde:#2e9e5b;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao);padding-bottom:60px}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px;
+         display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.4rem}
+  header a.voltar{color:#fff;background:rgba(255,255,255,.18);padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:700;font-size:.85rem}
+  header a.voltar:hover{background:rgba(255,255,255,.3)}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .box{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  .box h3{font-size:1rem;margin-bottom:12px;color:var(--rosa-escuro)}
+  label{display:block;font-size:.8rem;color:#7a6266;margin:8px 0 3px}
+  input,select{width:100%;padding:10px 12px;border:1px solid #e6d3d9;border-radius:9px;font-size:.95rem}
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid #e6d3d9;cursor:pointer;font-weight:700;font-size:.9rem;background:#fff;color:#7a6266}
+  .tab.ativo{background:var(--rosa);color:#fff;border-color:var(--rosa)}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:11px 20px;border-radius:999px;font-weight:700;cursor:pointer;font-size:.95rem}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-sm{padding:5px 10px;font-size:.8rem}
+  .btn-ghost{background:transparent;color:var(--rosa-escuro);border:1px solid var(--rosa)}
+  .res{max-height:320px;overflow:auto;margin-top:10px}
+  .res-item{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-bottom:1px solid #f2e7ea;gap:8px}
+  .res-item:hover{background:var(--blush)}
+  .res-item .d{font-size:.88rem}.res-item .m{font-size:.74rem;color:#9a868b}
+  .cart{width:100%;border-collapse:collapse}
+  .cart th,.cart td{padding:8px 6px;border-bottom:1px solid #f2e7ea;font-size:.85rem;text-align:left}
+  .cart th{color:var(--rosa-escuro);text-transform:uppercase;font-size:.7rem}
+  .cart td.num,.cart th.num{text-align:right}
+  .cart input.q{width:52px;text-align:center}
+  .cart input.p{width:84px;text-align:right}
+  .total{font-size:1.5rem;font-weight:800;color:var(--rosa-escuro);text-align:right;margin-top:12px}
+  .msg{padding:10px 14px;border-radius:10px;margin-top:10px;font-weight:600;font-size:.9rem;display:none}
+  .msg.ok{background:#e6f6ec;color:var(--verde);display:block}
+  .msg.erro{background:#fbe6e4;color:var(--erro);display:block}
+  .assoc{background:#fff6e6;border:1px solid #f0d9a8;border-radius:10px;padding:12px;margin-top:10px;display:none}
+  .assoc.show{display:block}
+  .mini{font-size:.78rem;color:#9a868b}
+  table.rec{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 20px rgba(90,40,55,.08);margin-top:8px}
+  table.rec th,table.rec td{padding:9px 11px;text-align:left;font-size:.84rem;border-bottom:1px solid #f2e7ea}
+  table.rec th{background:var(--blush);color:var(--rosa-escuro);text-transform:uppercase;font-size:.7rem}
+  h2.sec{margin:26px 0 6px;font-size:1.15rem}
+  table.rec td{vertical-align:top}
+  .prod-linha{font-size:.84rem;padding:2px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vendas · Botis da Eve</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="voltar" href="/estoque">Estoque</a>
+    <a class="voltar" href="/clientes">Clientes</a>
+    <a class="voltar" href="/vendas">Vendas</a>
+    <a class="voltar" href="/">← Site</a>
+    <a class="voltar" href="/logout">Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- Coluna esquerda: adicionar produtos -->
+    <div class="box">
+      <div class="tabs">
+        <div class="tab ativo" id="tab-busca" onclick="setModo('busca')">🔎 Buscar produtos</div>
+        <div class="tab" id="tab-scan" onclick="setModo('scanner')">📷 Código de barras</div>
+      </div>
+
+      <div id="painel-busca">
+        <label>Buscar por nome ou código</label>
+        <input id="q" placeholder="ex.: batom, siage, 54483..." autocomplete="off" oninput="buscar()" />
+        <div class="res" id="resultados"></div>
+      </div>
+
+      <div id="painel-scan" style="display:none">
+        <label>Escaneie o código de barras (ou digite e Enter)</label>
+        <input id="scan" placeholder="aguardando leitura..." autocomplete="off" />
+        <div class="mini" style="margin-top:6px">Cada leitura adiciona 1 unidade ao carrinho.</div>
+        <div class="assoc" id="assoc">
+          <div id="assoc-txt"></div>
+          <label>Código interno do produto</label>
+          <input id="assoc-cod" placeholder="ex.: 54483" />
+          <button class="btn btn-sm" style="margin-top:8px" onclick="associar()">Vincular e adicionar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna direita: carrinho -->
+    <div class="box">
+      <h3>🛒 Carrinho</h3>
+      <label>Cliente (opcional)</label>
+      <select id="cliente">
+        <option value="">— sem cliente —</option>
+        {% for c in clientes %}<option value="{{c['id']}}">{{c['nome']}}{% if c['telefone'] %} · {{c['telefone']}}{% endif %}</option>{% endfor %}
+      </select>
+      <table class="cart" id="cart" style="margin-top:12px">
+        <thead><tr><th>Produto</th><th class="num">Qtd</th><th class="num">Preço R$</th><th class="num">Subtotal</th><th></th></tr></thead>
+        <tbody id="cart-body">
+          <tr><td colspan="5" class="mini">Carrinho vazio.</td></tr>
+        </tbody>
+      </table>
+      <div class="total">Total: R$ <span id="total">0,00</span></div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="btn" id="btn-fechar" onclick="finalizar()" disabled>✓ Fechar venda</button>
+        <button class="btn btn-ghost" onclick="limpar()">Limpar</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <h2 class="sec">Últimas vendas</h2>
+  <table class="rec">
+    <tr><th>#</th><th>Data</th><th>Cliente</th><th class="num">Itens</th><th class="num">Total</th><th>Produtos</th></tr>
+    <tbody id="recentes">
+    {% for v in recentes %}
+      <tr>
+        <td>{{v['id']}}</td><td>{{v['data']}}</td><td>{{v['cliente'] or '—'}}</td>
+        <td class="num">{{v['n_itens']}}</td>
+        <td class="num">R$ {{ v['total']|brl }}</td>
+        <td>
+          {% for it in itens_por_venda.get(v['id'], []) %}
+            <div class="prod-linha">{{it['qtd']}}× {{it['descricao']}}
+              <span class="mini">— R$ {{ it['preco_unit']|brl }} = R$ {{ (it['qtd']*it['preco_unit'])|brl }}</span></div>
+          {% else %}
+            <span class="mini">—</span>
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+let cart = [];
+let modo = 'busca';
+
+function fmt(n){
+  n = (Number(n)||0).toFixed(2).replace('.', ',');
+  return n.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function parseNum(s){
+  s = String(s).replace('.', '').replace(',', '.');
+  let v = parseFloat(s); return isNaN(v) ? 0 : v;
+}
+function setModo(m){
+  modo = m;
+  document.getElementById('tab-busca').classList.toggle('ativo', m==='busca');
+  document.getElementById('tab-scan').classList.toggle('ativo', m==='scanner');
+  document.getElementById('painel-busca').style.display = m==='busca'?'block':'none';
+  document.getElementById('painel-scan').style.display = m==='scanner'?'block':'none';
+  if(m==='scanner') setTimeout(()=>document.getElementById('scan').focus(), 50);
+}
+
+let buscaTimer=null;
+function buscar(){
+  clearTimeout(buscaTimer);
+  const q = document.getElementById('q').value.trim();
+  buscaTimer = setTimeout(async ()=>{
+    const box = document.getElementById('resultados');
+    if(q.length < 2){ box.innerHTML=''; return; }
+    const r = await fetch('/api/produtos?q='+encodeURIComponent(q));
+    const d = await r.json();
+    if(!d.produtos.length){ box.innerHTML='<div class="mini" style="padding:8px">Nada encontrado.</div>'; return; }
+    box.innerHTML = d.produtos.map(p=>`
+      <div class="res-item">
+        <div><div class="d">${p.descricao}</div>
+          <div class="m">${p.codigo||''} · ${p.marca||''} · estoque ${p.qtd}${p.tipo==='brinde'?' · 🎁 brinde':''}</div></div>
+        <button class="btn btn-sm" ${p.qtd<=0?'disabled':''} onclick='addProd(${JSON.stringify(p)})'>+ R$ ${fmt(p.preco_venda)}</button>
+      </div>`).join('');
+  }, 250);
+}
+
+function addProd(p){
+  if(p.qtd <= 0){ return; }
+  const ex = cart.find(i=>i.produto_id===p.id);
+  if(ex){ ex.qtd += 1; }
+  else { cart.push({produto_id:p.id, codigo:p.codigo, descricao:p.descricao, qtd:1, preco:Number(p.preco_venda)||0, estoque:p.qtd}); }
+  render();
+}
+
+function render(){
+  const b = document.getElementById('cart-body');
+  if(!cart.length){ b.innerHTML='<tr><td colspan="5" class="mini">Carrinho vazio.</td></tr>';
+    document.getElementById('total').textContent='0,00';
+    document.getElementById('btn-fechar').disabled=true; return; }
+  let total=0;
+  b.innerHTML = cart.map((i,idx)=>{
+    const sub=i.qtd*i.preco; total+=sub;
+    return `<tr>
+      <td>${i.descricao}<div class="mini">${i.codigo||''} · estoque ${i.estoque}</div></td>
+      <td class="num"><input class="q" type="number" min="1" value="${i.qtd}" onchange="setQtd(${idx},this.value)"></td>
+      <td class="num"><input class="p" value="${fmt(i.preco)}" onchange="setPreco(${idx},this.value)"></td>
+      <td class="num">R$ ${fmt(sub)}</td>
+      <td class="num"><button class="btn btn-sm btn-ghost" onclick="rem(${idx})">×</button></td>
+    </tr>`;}).join('');
+  document.getElementById('total').textContent=fmt(total);
+  document.getElementById('btn-fechar').disabled=false;
+}
+function setQtd(i,v){ cart[i].qtd=Math.max(1,parseInt(v)||1); render(); }
+function setPreco(i,v){ cart[i].preco=parseNum(v); render(); }
+function rem(i){ cart.splice(i,1); render(); }
+function limpar(){ cart=[]; render(); msg('',''); }
+
+// ---- Scanner ----
+const scanInput = document.getElementById('scan');
+if(scanInput){
+  scanInput.addEventListener('keydown', async (e)=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      const cod = scanInput.value.trim();
+      scanInput.value='';
+      if(!cod) return;
+      const r = await fetch('/api/produto?codigo='+encodeURIComponent(cod));
+      const d = await r.json();
+      if(d.ok){ addProd(d.produto); document.getElementById('assoc').classList.remove('show'); }
+      else {
+        // nao encontrado: oferece vincular a um produto pelo codigo interno
+        window._ultimoBarras = cod;
+        document.getElementById('assoc-txt').innerHTML =
+          'Código de barras <b>'+cod+'</b> não está vinculado a nenhum produto. Informe o código interno para vincular:';
+        document.getElementById('assoc').classList.add('show');
+        document.getElementById('assoc-cod').focus();
+      }
+    }
+  });
+}
+async function associar(){
+  const codInterno = document.getElementById('assoc-cod').value.trim();
+  if(!codInterno) return;
+  const r = await fetch('/api/associar-barras', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({codigo:codInterno, codigo_barras:window._ultimoBarras})});
+  const d = await r.json();
+  if(d.ok){
+    addProd(d.produto);
+    document.getElementById('assoc').classList.remove('show');
+    document.getElementById('assoc-cod').value='';
+    scanInput.focus();
+  } else {
+    document.getElementById('assoc-txt').innerHTML = 'Código interno não encontrado no estoque. Tente outro.';
+  }
+}
+
+function msg(txt,tipo){
+  const m=document.getElementById('msg');
+  m.textContent=txt; m.className='msg'+(tipo?(' '+tipo):'');
+}
+async function finalizar(){
+  if(!cart.length) return;
+  document.getElementById('btn-fechar').disabled=true;
+  const body={ cliente_id: document.getElementById('cliente').value||null, modo,
+    itens: cart.map(i=>({produto_id:i.produto_id, qtd:i.qtd, preco:i.preco})) };
+  const r = await fetch('/vendas/finalizar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const d = await r.json();
+  if(d.ok){
+    msg('Venda #'+d.venda_id+' concluída! Total R$ '+fmt(d.total)+'. Estoque atualizado.', 'ok');
+    cart=[]; render();
+    setTimeout(()=>location.reload(), 1200);
+  } else {
+    msg(d.erro||'Erro ao finalizar.', 'erro');
+    document.getElementById('btn-fechar').disabled=false;
+  }
+}
+</script>
+</body>
+</html>

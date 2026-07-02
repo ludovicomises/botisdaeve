@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Estoque · Botis da Eve</title>
+<style>
+  :root{--rosa:#c96b7f;--rosa-escuro:#a94f63;--blush:#f7e6ea;--creme:#fdf8f5;
+        --carvao:#3a2e30;--ouro:#c9a15a;--verde:#2e9e5b;--erro:#c0392b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--creme);color:var(--carvao);padding-bottom:60px}
+  a{color:var(--rosa-escuro)}
+  header{background:linear-gradient(160deg,var(--rosa),var(--rosa-escuro));color:#fff;padding:20px 28px;
+         display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.5rem}header p{opacity:.9;font-size:.9rem}
+  header a.voltar{color:#fff;background:rgba(255,255,255,.18);padding:8px 16px;border-radius:999px;
+                  text-decoration:none;font-weight:700;font-size:.85rem}
+  header a.voltar:hover{background:rgba(255,255,255,.3)}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px}
+  .flash{padding:12px 16px;border-radius:10px;margin:10px 0;font-weight:600}
+  .flash.ok{background:#e6f6ec;color:var(--verde)}
+  .flash.erro{background:#fbe6e4;color:var(--erro)}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}
+  .kpi{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  .kpi .n{font-size:1.6rem;font-weight:800;color:var(--rosa-escuro)}
+  .kpi .l{font-size:.8rem;color:#7a6266;text-transform:uppercase;letter-spacing:.05em}
+  .painel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:16px 0}
+  .box{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 20px rgba(90,40,55,.08)}
+  .box h3{font-size:1rem;margin-bottom:12px;color:var(--rosa-escuro)}
+  label{display:block;font-size:.8rem;color:#7a6266;margin:6px 0 2px}
+  input,select{width:100%;padding:8px 10px;border:1px solid #e6d3d9;border-radius:8px;font-size:.9rem}
+  .row{display:flex;gap:8px}
+  .btn{background:var(--rosa);color:#fff;border:0;padding:9px 16px;border-radius:999px;
+       font-weight:700;cursor:pointer;font-size:.88rem;margin-top:10px}
+  .btn:hover{background:var(--rosa-escuro)}
+  .btn-sm{padding:6px 12px;font-size:.8rem;margin-top:0}
+  .btn-ghost{background:transparent;color:var(--rosa-escuro);border:1px solid var(--rosa)}
+  .btn-danger{background:transparent;color:var(--erro);border:1px solid #e6b0aa}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;
+        box-shadow:0 6px 20px rgba(90,40,55,.08);margin-top:8px}
+  th,td{padding:10px 12px;text-align:left;font-size:.86rem;border-bottom:1px solid #f2e7ea}
+  th{background:var(--blush);color:var(--rosa-escuro);text-transform:uppercase;font-size:.72rem;letter-spacing:.04em}
+  td.num,th.num{text-align:right}
+  .esgotado{color:var(--erro);font-weight:700}
+  .mini{font-size:.75rem;color:#9a868b}
+  .inline{display:flex;gap:6px;align-items:center}
+  .inline input{width:82px}
+  .sec-title{margin:26px 0 4px;font-size:1.15rem;color:var(--carvao)}
+  .margem-pos{color:var(--verde);font-weight:700}.margem-neg{color:var(--erro);font-weight:700}
+  @media(max-width:820px){.cards,.painel{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Estoque · Botis da Eve</h1>
+    <p>Controle de entradas, baixas e margem — começando por O Boticário</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="voltar" href="/estoque">Estoque</a>
+    <a class="voltar" href="/clientes">Clientes</a>
+    <a class="voltar" href="/vendas">Vendas</a>
+    <a class="voltar" href="/">← Site</a>
+    <a class="voltar" href="/logout">Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  {% for cat,msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{cat}}">{{msg}}</div>
+  {% endfor %}
+
+  <div class="cards">
+    <div class="kpi"><div class="n">{{produtos|length}}</div><div class="l">Produtos</div></div>
+    <div class="kpi"><div class="n">{{unidades}}</div><div class="l">Unidades em estoque</div></div>
+    <div class="kpi"><div class="n">R$ {{ tot_invest|brl }}</div><div class="l">Investido (custo)</div></div>
+    <div class="kpi"><div class="n">R$ {{ tot_venda|brl }}</div><div class="l">Valor de venda</div></div>
+  </div>
+
+  <div class="painel">
+    <div class="box">
+      <h3>📄 Importar Nota Fiscal</h3>
+      <form action="/importar" method="post" enctype="multipart/form-data">
+        <label>PDF da NF (DANFE)</label>
+        <input type="file" name="nf" accept="application/pdf" required />
+        <button class="btn" type="submit">Ler nota fiscal</button>
+      </form>
+    </div>
+    <div class="box">
+      <h3>➕ Adicionar item manual</h3>
+      <form action="/produto/novo" method="post">
+        <div class="row">
+          <div style="flex:1"><label>Código</label><input name="codigo" placeholder="opcional" /></div>
+          <div style="flex:2"><label>Descrição</label><input name="descricao" required /></div>
+        </div>
+        <div class="row">
+          <div><label>Qtd</label><input name="qtd" type="number" value="1" min="0" /></div>
+          <div><label>Custo R$</label><input name="custo" placeholder="0,00" /></div>
+          <div><label>Venda R$</label><input name="preco_venda" placeholder="0,00" /></div>
+        </div>
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="venda">Produto de venda</option>
+          <option value="brinde">Brinde</option>
+        </select>
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+    </div>
+    <div class="box">
+      <h3>🏷️ Preços do catálogo</h3>
+      <p class="mini">Opcional. Sobe um catálogo (PDF) e o sistema sugere o preço de venda ao importar NFs.
+        {% if tem_catalogo %}<br><b style="color:var(--verde)">✓ catálogo carregado</b>{% endif %}</p>
+      <form action="/catalogo" method="post" enctype="multipart/form-data">
+        <label>PDF do catálogo</label>
+        <input type="file" name="catalogo" accept="application/pdf" required />
+        <button class="btn btn-ghost" type="submit">Processar catálogo</button>
+      </form>
+    </div>
+  </div>
+
+  <h2 class="sec-title">Estoque atual</h2>
+  {% if produtos %}
+  <table>
+    <tr>
+      <th>Código</th><th>Descrição</th><th class="num">Qtd</th>
+      <th class="num">Custo</th><th>Preço venda</th><th class="num">Margem</th>
+      <th class="num">Valor estoque</th><th>Baixa (venda)</th><th></th>
+    </tr>
+    {% for p in produtos %}
+    <tr>
+      <td class="mini">{{p['codigo']}}</td>
+      <td>{{p['descricao']}}<div class="mini">{{p['marca']}}{% if p['data_compra'] %} · compra {{p['data_compra']}}{% endif %}{% if p['ultima_nf'] %} · NF {{p['ultima_nf']}}{% endif %}</div></td>
+      <td class="num {{'esgotado' if p['qtd']==0 else ''}}">{{p['qtd']}}</td>
+      <td class="num">R$ {{ p['custo']|brl }}</td>
+      <td>
+        <form action="/produto/{{p['id']}}/preco" method="post" class="inline">
+          <input name="preco_venda" value="{{ p['preco_venda']|brl }}" />
+          <button class="btn btn-sm btn-ghost" type="submit">ok</button>
+        </form>
+      </td>
+      <td class="num">
+        {% if p['custo']>0 and p['preco_venda']>0 %}
+          {% set mg = (p['preco_venda']-p['custo'])/p['custo']*100 %}
+          <span class="{{'margem-pos' if mg>=0 else 'margem-neg'}}">{{ '%.0f%%'|format(mg) }}</span>
+        {% else %}<span class="mini">—</span>{% endif %}
+      </td>
+      <td class="num">R$ {{ (p['qtd']*p['custo'])|brl }}</td>
+      <td>
+        <form action="/baixa" method="post" class="inline">
+          <input type="hidden" name="produto_id" value="{{p['id']}}" />
+          <input name="qtd" type="number" value="1" min="1" max="{{p['qtd']}}" />
+          <button class="btn btn-sm" type="submit" {{'disabled' if p['qtd']==0 else ''}}>vender</button>
+        </form>
+      </td>
+      <td>
+        <div class="inline">
+          <a class="btn btn-sm btn-ghost" href="/produto/{{p['id']}}/editar">editar</a>
+          <form action="/produto/{{p['id']}}/remover" method="post"
+                onsubmit="return confirm('Remover {{p['descricao']}}?')">
+            <button class="btn btn-sm btn-danger" type="submit">×</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <div class="box"><p class="mini">Nenhum produto ainda. Importe uma NF ou adicione manualmente.</p></div>
+  {% endif %}
+
+  <h2 class="sec-title">🎁 Estoque de brindes
+    {% if brindes %}<span class="mini">— investido R$ {{ brindes_invest|brl }}</span>{% endif %}
+  </h2>
+  {% if brindes %}
+  <table>
+    <tr>
+      <th>Código</th><th>Descrição</th><th class="num">Qtd</th>
+      <th class="num">Custo</th><th class="num">Valor estoque</th><th>Baixa</th><th></th>
+    </tr>
+    {% for p in brindes %}
+    <tr>
+      <td class="mini">{{p['codigo']}}</td>
+      <td>{{p['descricao']}}<div class="mini">{{p['marca']}}{% if p['data_compra'] %} · compra {{p['data_compra']}}{% endif %}{% if p['ultima_nf'] %} · NF {{p['ultima_nf']}}{% endif %}</div></td>
+      <td class="num {{'esgotado' if p['qtd']==0 else ''}}">{{p['qtd']}}</td>
+      <td class="num">R$ {{ p['custo']|brl }}</td>
+      <td class="num">R$ {{ (p['qtd']*p['custo'])|brl }}</td>
+      <td>
+        <form action="/baixa" method="post" class="inline">
+          <input type="hidden" name="produto_id" value="{{p['id']}}" />
+          <input name="qtd" type="number" value="1" min="1" max="{{p['qtd']}}" />
+          <button class="btn btn-sm" type="submit" {{'disabled' if p['qtd']==0 else ''}}>baixar</button>
+        </form>
+      </td>
+      <td>
+        <div class="inline">
+          <a class="btn btn-sm btn-ghost" href="/produto/{{p['id']}}/editar">editar</a>
+          <form action="/produto/{{p['id']}}/remover" method="post"
+                onsubmit="return confirm('Remover {{p['descricao']}}?')">
+            <button class="btn btn-sm btn-danger" type="submit">×</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <div class="box"><p class="mini">Nenhum brinde ainda. Ao importar uma NF, os catálogos/brindes/amostras entram aqui.</p></div>
+  {% endif %}
+
+  <h2 class="sec-title">Últimas movimentações</h2>
+  {% if movs %}
+  <table>
+    <tr><th>Data</th><th>Tipo</th><th>Produto</th><th class="num">Qtd</th><th class="num">Valor un.</th><th>Origem</th></tr>
+    {% for m in movs %}
+    <tr>
+      <td class="mini">{{m['data']}}</td>
+      <td>{% if m['tipo']=='entrada' %}<span style="color:var(--verde)">▲ entrada</span>
+          {% else %}<span style="color:var(--rosa-escuro)">▼ saída</span>{% endif %}</td>
+      <td>{{m['pdesc']}}</td>
+      <td class="num">{{m['qtd']}}</td>
+      <td class="num">R$ {{ m['valor_unit']|brl }}</td>
+      <td class="mini">{{m['origem']}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<div class="box"><p class="mini">Sem movimentações ainda.</p></div>{% endif %}
+</div>
+</body>
+</html>
